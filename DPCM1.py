@@ -6,6 +6,16 @@ import soundfile as sf
 # Read the voice message
 sample_rate, original_signal = wavfile.read('voicedc.wav')
 
+# Print the actual sampling rate of the recorded voice
+print(f"The original sampling rate of the recorded voice is {sample_rate} Hz.")
+
+# Ask the user for a new sampling rate, provide a hint for common values
+try:
+    user_sampling_rate = int(input("Enter the new sampling rate for the audio (e.g., 44100, 48000) or press Enter to keep the original: ") or sample_rate)
+except ValueError:
+    user_sampling_rate = sample_rate  # Default to original sample rate if input is invalid
+    print("Invalid input. Using the original sampling rate.")
+
 # Convert to mono if stereo
 if original_signal.ndim > 1:
     original_signal = original_signal.mean(axis=1)
@@ -44,8 +54,6 @@ def dpcm_decode(encoded_signal):
 
     return decoded_signal
 
-
-
 # Decode the signal
 decoded_signal = dpcm_decode(encoded_signal)
 
@@ -53,12 +61,9 @@ decoded_signal = dpcm_decode(encoded_signal)
 print("Original signal length:", len(original_signal))
 print("Encoded signal length:", len(encoded_signal))
 print("Decoded signal length:", len(decoded_signal))
-print("Sample rate:", sample_rate)
+print("Sample rate used for processing:", user_sampling_rate)
 
-
-
-
-def main(input_file, output_file):
+def main(input_file, output_file, user_sampling_rate):
     # Read the audio signal
     audio_signal, sample_rate = sf.read(input_file)
 
@@ -72,16 +77,16 @@ def main(input_file, output_file):
     # DPCM Decode
     decoded_signal = dpcm_decode(encoded_signal)
 
-    # Write the decoded audio to a file
-    sf.write(output_file, decoded_signal, sample_rate)
+    # Write the decoded audio to a file with the user-defined or original sampling rate
+    sf.write(output_file, decoded_signal, user_sampling_rate)
 
 # Define start and end times in microseconds
 start_time_us = 200000  # Start time in microseconds
 end_time_us = 500000    # End time in microseconds
 
 # Convert times to samples
-start_sample = int(start_time_us * sample_rate / 1_000_000)
-end_sample = int(end_time_us * sample_rate / 1_000_000)
+start_sample = int(start_time_us * user_sampling_rate / 1_000_000)
+end_sample = int(end_time_us * user_sampling_rate / 1_000_000)
 
 # Ensure the samples are within bounds
 if start_sample < 0:
@@ -116,7 +121,7 @@ else:
     decoded_signal_int16 = np.zeros_like(decoded_signal_segment, dtype=np.int16)
 
 # Save the normalized decoded signal to a new WAV file
-# wavfile.write('decoded_v1.wav', sample_rate, decoded_signal_int16)
+# wavfile.write('decoded_v1.wav', user_sampling_rate, decoded_signal_int16)
 
 # Create time arrays for plotting in nanoseconds
 time_original = np.linspace(start_time_us, end_time_us, num=len(original_signal_segment))
@@ -146,7 +151,8 @@ plt.ylabel("Amplitude")
 
 plt.tight_layout()
 plt.show()
+
 if __name__ == "__main__":
     input_file = 'voicedc.wav'  # Replace with your input audio file
-    output_file =  r'C:\\Users\\amank\\Desktop\\dc2\\output_audio.wav'  # Desired output file name
-    main(input_file, output_file)
+    output_file = r'C:\\Users\\amank\\Desktop\\dc2\\output_audio.wav'  # Desired output file name
+    main(input_file, output_file, user_sampling_rate)
